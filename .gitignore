@@ -1,0 +1,7 @@
+.env*
+!.env*.example
+*.code-workspace
+venv
+*.ipynb
+__pycache__
+*.json

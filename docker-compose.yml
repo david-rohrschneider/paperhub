@@ -1,0 +1,36 @@
+version: '3'
+services:
+  paperhub-db:
+    image: mongo
+    restart: unless-stopped
+    container_name: paperhub-db
+    ports:
+      - '27017:27017'
+    volumes:
+      - "mongodb-data:/data/db"
+    networks:
+      - paperhub
+
+  paperhub-backend:
+    image: paperhub-backend
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    container_name: paperhub-backend
+    restart: unless-stopped
+    command: ["fastapi", "run", "src/app.py", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - ./backend/.env.development
+    ports:
+      - "8000:8000"
+    volumes:
+      - "${SYSTEM_FIREBASE_CERT_PATH}:/fastapi/firebase-cert.json:ro"
+    networks:
+      - paperhub
+
+networks:
+  paperhub:
+    name: paperhub
+
+volumes:
+  mongodb-data:
