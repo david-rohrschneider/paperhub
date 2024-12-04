@@ -1,0 +1,8 @@
+arxiv
+beanie
+black
+fastapi[standard]
+firebase-admin
+pdf2image
+pydantic-extra-types
+pydantic-settings
