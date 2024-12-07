@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from src.config import CONFIG
 
 
-ARXIV = arxiv.Client()
+ARXIV = arxiv.Client(page_size=CONFIG.arxiv.max_results)
 """The global arXiv client."""
 
 
@@ -28,16 +28,18 @@ def find_by_id(id: str) -> arxiv.Result:
     return result
 
 
-def get_plain_id(result: arxiv.Result) -> str:
+def get_plain_id(input: arxiv.Result | str) -> str:
     """Get the plain ID from an arXiv result.
 
     Args:
-        result (arxiv.Result): arXiv result.
+        result (arxiv.Result | str): arXiv result or ID.
 
     Returns:
         str: The plain ID.
     """
-    return result.get_short_id().split("v")[0]
+    if isinstance(input, arxiv.Result):
+        input = input.get_short_id()
+    return input.split("v")[0]
 
 
 class ArxivCategory(str, Enum):

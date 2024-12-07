@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from firebase_admin import auth
 
 from src.auth.dependencies import current_user_id, current_user
+from src.libraries.models import Library
 from src.users.models import User, UserCreateInput, UserUpdateInput
 
 
@@ -42,6 +43,8 @@ async def create_user(
         bio=body.bio,
         refs=body.refs,
     ).create()
+
+    await Library(user_id=user.id, title="Default", default=True, private=True).create()
 
     return user
 

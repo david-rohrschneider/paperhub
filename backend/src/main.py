@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
     __logger.info("MongoDB connection initialized successfully")
 
-    await init_beanie(app.db, document_models=[User])
+    await init_beanie(app.db, document_models=[User, Library, Paper])
     __logger.info("Beanie initialized successfully")
 
     credential = firebase_admin.credentials.Certificate(CONFIG.firebase_cert_path)

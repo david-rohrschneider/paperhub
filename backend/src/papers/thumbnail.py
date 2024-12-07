@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from pdf2image import convert_from_bytes
 
@@ -36,3 +37,22 @@ def generate_thumbnail_from_url(url: str, name: str) -> str:
     )
 
     return images[0]
+
+
+def generate_thumbnails_from_urls(urls: list[str], names: list[str]) -> list[str]:
+    """Simoultaniously generate thumbnail images from PDF URLs.
+
+    Args:
+        urls (list[str]): PDF URLs.
+        names (list[str]): Thumbnail names.
+
+    Returns:
+        list[str]: Local Thumbnail URLs.
+    """
+    params = list(zip(urls, names))
+    thread_fn = lambda x: generate_thumbnail_from_url(*x)
+
+    with ThreadPoolExecutor(max_workers=CONFIG.thumbnail.max_workers) as executor:
+        results = list(executor.map(thread_fn, params))
+
+    return results

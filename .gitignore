@@ -8,3 +8,5 @@ firebase-cert.json
 deno.lock
 node_modules
 firebase-config.json
+thumbnails
+.vscode

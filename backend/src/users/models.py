@@ -50,9 +50,10 @@ class UserCreateInput(UserBase):
 class UserUpdateInput(UserBase):
     """User update fields."""
 
-    first_name: str | None = None
-    last_name: str | None = None
-    bib_links: UserRefs | None = None
+    first_name: str = None
+    last_name: str = None
+    refs: UserRefs = None
+    research_interests: list[ArxivCategory] = None
 
 
 class User(Document, UserBase):

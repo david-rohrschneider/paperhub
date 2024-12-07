@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel
 
@@ -23,6 +25,7 @@ class ThumbnailSettings(BaseModel):
     format: str = "jpg"
     quality: int = 50
     local_folder: str = "thumbnails"
+    max_workers: int = 5
 
 
 class ArxivSettings(BaseModel):
@@ -58,3 +61,7 @@ class Settings(BaseSettings):
 
 CONFIG = Settings()
 """Global configuration object."""
+
+
+if not os.path.exists(CONFIG.thumbnail.local_folder):
+    os.makedirs(os.path.abspath(CONFIG.thumbnail.local_folder))

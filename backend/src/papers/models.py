@@ -2,15 +2,15 @@ from enum import Enum
 from datetime import datetime
 from typing import Annotated
 
-from beanie import Document, Indexed
-from pydantic import BaseModel, HttpUrl
+from beanie import Document, Indexed, PydanticObjectId
+from pydantic import BaseModel, Field, HttpUrl
 import arxiv
 
 from src.papers.adapters.arxiv_adapter import get_plain_id
 
 
 class PaperSource(str, Enum):
-    ARXIV = "arXiv"
+    ARXIV = "arxiv"
 
 
 class PaperBase(BaseModel):
@@ -33,6 +33,7 @@ class Paper(Document, PaperBase):
         plain_id = get_plain_id(result)
         authors = [author.name for author in result.authors]
         return cls(
+            id=PydanticObjectId(),
             source=PaperSource.ARXIV,
             source_id=plain_id,
             title=result.title,
@@ -43,6 +44,12 @@ class Paper(Document, PaperBase):
         )
 
 
-class PaperResponse(PaperBase):
+class PaperResponse(Paper):
     source_url: HttpUrl
     thumbnail_url: HttpUrl
+
+
+class PaperIdView(BaseModel):
+    id: PydanticObjectId = Field(alias="_id")
+    source_id: str
+    source: PaperSource
