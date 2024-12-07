@@ -4,4 +4,7 @@
 venv
 *.ipynb
 __pycache__
-*.json
+firebase-cert.json
+deno.lock
+node_modules
+firebase-config.json

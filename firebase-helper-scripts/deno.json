@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "dev": "deno run --watch main.ts"
+  },
+  "imports": {
+    "firebase": "npm:firebase@^11.0.2"
+  },
+  "nodeModulesDir": "auto"
+}
