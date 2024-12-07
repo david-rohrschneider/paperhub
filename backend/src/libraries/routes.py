@@ -51,7 +51,7 @@ async def get_libraries(
     Returns:
         list[Library]: The libraries.
     """
-    libraries = await Library.find(Library.user_id == uid)
+    libraries = await Library.find(Library.user_id == uid).to_list()
     return libraries
 
 

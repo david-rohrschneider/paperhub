@@ -3,25 +3,25 @@ from typing import Annotated
 from enum import Enum
 
 from beanie import Document, Indexed
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, HttpUrl
 
 from src.papers.adapters.arxiv_adapter import ArxivCategory
 
 
-class UserLinks(BaseModel):
+class UserRefs(BaseModel):
     """User social and academic links."""
 
     orcid: str | None = None
-    google_scholar: str | None = None
-    researchgate: str | None = None
-    linkedin: str | None = None
+    google_scholar: HttpUrl | None = None
+    researchgate: HttpUrl | None = None
+    linkedin: HttpUrl | None = None
 
 
 class UserTitle(str, Enum):
     """User titles."""
 
-    MR = "MR"
-    MS = "MS"
+    B_SC = "B_SC"
+    M_SC = "M_SC"
     DR = "DR"
     PROF = "PROF"
 
@@ -31,7 +31,7 @@ class UserBase(BaseModel):
 
     first_name: str
     last_name: str
-    links: UserLinks
+    refs: UserRefs
     # TODO: Either define a custom Enum and map to different db categories or
     #  switch to using Tags
     research_interests: list[ArxivCategory] = []
@@ -44,8 +44,7 @@ class UserBase(BaseModel):
 class UserCreateInput(UserBase):
     """User registration fields."""
 
-    email: EmailStr
-    password: str
+    pass
 
 
 class UserUpdateInput(UserBase):
@@ -53,7 +52,7 @@ class UserUpdateInput(UserBase):
 
     first_name: str | None = None
     last_name: str | None = None
-    bib_links: UserLinks | None = None
+    bib_links: UserRefs | None = None
 
 
 class User(Document, UserBase):

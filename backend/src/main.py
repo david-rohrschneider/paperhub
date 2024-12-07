@@ -7,7 +7,7 @@ import firebase_admin
 from motor.motor_asyncio import AsyncIOMotorClient
 from starlette.middleware.cors import CORSMiddleware
 
-from src.auth.dependencies import current_user_id
+from src.auth.dependencies import current_user
 from src.config import CONFIG
 from src.users.models import User
 from src.users.routes import router as UsersRouter
@@ -58,7 +58,7 @@ app = FastAPI(
     description=DESCRIPTION,
     version=CONFIG.version,
     lifespan=lifespan,
-    dependencies=[Depends(current_user_id)],
+    dependencies=[Depends(current_user)],
 )
 
 app.add_middleware(

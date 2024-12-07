@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from firebase_admin import auth
 
-from src.auth.dependencies import current_user_id
+from src.auth.dependencies import current_user_id, current_user
 from src.users.models import User, UserCreateInput, UserUpdateInput
 
 
@@ -12,13 +12,13 @@ router = APIRouter(prefix="/users", tags=["User"])
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(
-    body: UserCreateInput, uid: Annotated[str, Depends(current_user_id)]
+    body: UserCreateInput, user: Annotated[auth.UserRecord, Depends(current_user)]
 ) -> User:
     """Create a new user. This supposes that the user is already authenticated by Firebase.
 
     Args:
         body (UserCreateInput): User registration fields.
-        uid (str): Firebase user ID.
+        user (auth.UserRecord): Firebase user record.
 
     Returns:
         User: The created user.
@@ -26,21 +26,21 @@ async def create_user(
     Raises:
         HTTPException: If the user already exists.
     """
-    user = await User.find_one(uid)
+    db_user = await User.get(user.uid)
 
-    if user is not None:
+    if db_user is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "User already exists")
 
     user = await User(
-        id=uid,
-        email=body.email,
+        id=user.uid,
+        email=user.email,
         first_name=body.first_name,
         last_name=body.last_name,
         affiliation=body.affiliation,
         title=body.title,
         bday=body.bday,
         bio=body.bio,
-        links=body.links,
+        refs=body.refs,
     ).create()
 
     return user
@@ -59,7 +59,7 @@ async def get_user(uid: Annotated[str, Depends(current_user_id)]) -> User:
     Raises:
         HTTPException: If the user is not found.
     """
-    user = await User.find_one(uid)
+    user = await User.get(uid)
 
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
@@ -83,7 +83,7 @@ async def update_user(
     Raises:
         HTTPException: If the user is not found.
     """
-    user = await User.find_one(uid)
+    user = await User.get(uid)
 
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
@@ -109,7 +109,7 @@ async def delete_user(uid: Annotated[str, Depends(current_user_id)]) -> None:
     Raises:
         HTTPException: If the user is not found.
     """
-    user = await User.find_one(uid)
+    user = await User.get(uid)
 
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")

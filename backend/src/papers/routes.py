@@ -28,7 +28,7 @@ async def get_paper_feed(
     Returns:
         list[PaperResponse]: List of papers.
     """
-    user = await User.find_one(uid).project(UserResearchInterestsView)
+    user = await User.find_one(User.id == uid).project(UserResearchInterestsView)
     res = arxiv_adapter.find_by_categories(user.research_interests)
 
     res_ids = [arxiv_adapter.get_plain_id(r) for r in res]
