@@ -35,7 +35,12 @@ const createUser = async (email: string, password: string) => {
   }
 };
 
-const email = "example@example.com";
-const password = "password";
+const email = Deno.env.get("EMAIL");
+const password = Deno.env.get("PASSWORD");
+
+if (!email || !password) {
+  console.error("Please provide email and password");
+  Deno.exit(1);
+}
 
 createUser(email, password);

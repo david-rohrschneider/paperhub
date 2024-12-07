@@ -14,13 +14,19 @@ const login = async (email: string, password: string) => {
       password,
     );
     const user = userCredential.user;
-    console.log(user);
+    console.log("Logged in as:", user.email);
+    console.log("\nToken:\n\n", await user.getIdToken());
   } catch (error) {
     console.error(error);
   }
 };
 
-const email = "example@example.com";
-const password = "password";
+const email = Deno.env.get("EMAIL");
+const password = Deno.env.get("PASSWORD");
+
+if (!email || !password) {
+  console.error("Please provide email and password");
+  Deno.exit(1);
+}
 
 login(email, password);
