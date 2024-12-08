@@ -15,6 +15,10 @@ from src.libraries.models import Library
 from src.libraries.routes import router as LibrariesRouter
 from src.papers.models import Paper
 from src.papers.routes import router as PapersRouter
+from src.comments.models import Comment
+from src.comments.routes import router as CommentsRouter
+from src.likes.models import Like
+from src.likes.routes import router as LikesRouter
 
 
 logging.basicConfig(level=logging.INFO)
@@ -40,7 +44,7 @@ async def lifespan(app: FastAPI):
 
     __logger.info("MongoDB connection initialized successfully")
 
-    await init_beanie(app.db, document_models=[User, Library, Paper])
+    await init_beanie(app.db, document_models=[User, Library, Paper, Comment, Like])
     __logger.info("Beanie initialized successfully")
 
     credential = firebase_admin.credentials.Certificate(CONFIG.firebase_cert_path)
@@ -72,3 +76,5 @@ app.add_middleware(
 app.include_router(UsersRouter)
 app.include_router(LibrariesRouter)
 app.include_router(PapersRouter)
+app.include_router(CommentsRouter)
+app.include_router(LikesRouter)

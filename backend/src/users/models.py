@@ -3,7 +3,7 @@ from typing import Annotated
 from enum import Enum
 
 from beanie import Document, Indexed
-from pydantic import BaseModel, EmailStr, HttpUrl
+from pydantic import BaseModel, EmailStr, Field, HttpUrl
 
 from src.papers.adapters.arxiv_adapter import ArxivCategory
 
@@ -72,3 +72,13 @@ class UserResearchInterestsView(BaseModel):
     """User research interests view."""
 
     research_interests: list[ArxivCategory]
+
+
+class UserBasicInfoView(BaseModel):
+    """User basic info view."""
+
+    id: str = Field(alias="_id")
+    first_name: str
+    last_name: str
+    title: UserTitle | None
+    affiliation: str | None

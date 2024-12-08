@@ -53,3 +53,12 @@ class PaperIdView(BaseModel):
     id: PydanticObjectId = Field(alias="_id")
     source_id: str
     source: PaperSource
+
+
+class PaperBasicInfoView(BaseModel):
+    id: PydanticObjectId = Field(alias="_id")
+    title: str
+    pub_date: datetime
+    authors: list[str]
+    likes: int
+    comments: int
