@@ -1,18 +1,19 @@
-from datetime import datetime
 from typing import Annotated
 
 from beanie import PydanticObjectId
-from beanie.operators import In
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from src.auth.dependencies import current_user_id
+from src.dependencies import Pagination
 from src.libraries.models import (
     Library,
     LibraryPapersInput,
     LibraryCreateInput,
+    LibraryResponse,
     LibraryUpdateInput,
 )
-from src.papers.models import Paper, PaperIdView
+from src.libraries import database as libraries_db
+from src.papers.models import PaperLeanResponse
 
 
 router = APIRouter(prefix="/libraries", tags=["Library"])
@@ -32,76 +33,71 @@ async def create_library(
     Returns:
         Library: The created library.
     """
-    library = await Library(
-        user_id=uid,
-        title=body.title,
-        private=body.private,
-        default=False,
-        created_at=datetime.now(),
-    ).create()
-
-    return library
+    return await libraries_db.create(body, uid)
 
 
 @router.get("")
 async def get_libraries(
+    pagination: Annotated[Pagination, Depends(Pagination)],
     uid: Annotated[str, Depends(current_user_id)],
 ) -> list[Library]:
     """Get all libraries of the user.
 
     Args:
+        pagination (Pagination): Pagination parameters.
         uid (str): The user ID.
 
     Returns:
         list[Library]: The libraries.
     """
-    libraries = await Library.find(Library.user_id == uid).to_list()
-    return libraries
+    return await libraries_db.get_many_by_user(uid, pagination)
 
 
 @router.get("/{library_id}")
 async def get_library(
-    library_id: PydanticObjectId, uid: Annotated[str, Depends(current_user_id)]
-) -> Library:
+    library_id: PydanticObjectId,
+    pagination: Annotated[Pagination, Depends(Pagination)],
+    uid: Annotated[str, Depends(current_user_id)],
+) -> LibraryResponse:
     """Get a library by ID.
 
     Args:
         library_id (PydanticObjectId): The library ID.
+        pagination (Pagination): Pagination parameters for papers in libray.
         uid (str): The user ID.
 
     Returns:
-        Library: The library.
+        LibraryResponse: The library.
 
     Raises:
         HTTPException: If the library is not found.
     """
-    library = await Library.find_one(Library.id == library_id, Library.user_id == uid)
+    library, papers = await libraries_db.get_one_by_user(library_id, uid, pagination)
+    papers = [PaperLeanResponse.from_semantic_scholar(p) for p in papers]
 
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    return library
+    return LibraryResponse(**library.model_dump(exclude=("papers")), papers=papers)
 
 
 @router.get("/public/{library_id}")
-async def get_public_library(library_id: PydanticObjectId) -> Library:
+async def get_public_library(
+    library_id: PydanticObjectId, pagination: Annotated[Pagination, Depends(Pagination)]
+) -> LibraryResponse:
     """Get a public library by ID.
 
     Args:
         library_id (PydanticObjectId): The library ID.
+        pagination (Pagination): Pagination parameters for papers in libray.
 
     Returns:
-        Library: The library.
+        LibraryResponse: The library.
 
     Raises:
         HTTPException: If the library is not found.
     """
-    library = await Library.find_one(Library.id == library_id, Library.private == False)
+    library, papers = await libraries_db.get_one_public(library_id, pagination)
+    papers = [PaperLeanResponse.from_semantic_scholar(p) for p in papers]
 
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    return library
+    return LibraryResponse(**library.model_dump(exclude=("papers")), papers=papers)
 
 
 @router.patch("/{library_id}")
@@ -123,20 +119,7 @@ async def update_library(
     Raises:
         HTTPException: If the library is not found or the request is invalid.
     """
-    if body.title is None and body.private is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
-    library = await Library.find_one(Library.id == library_id, Library.user_id == uid)
-
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    if library.default:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    library = await library.set(body.model_dump(exclude_unset=True))
-
-    return library
+    return await libraries_db.update(library_id, body, uid)
 
 
 @router.patch("/{library_id}/clear")
@@ -155,15 +138,7 @@ async def clear_library(
     Raises:
         HTTPException: If the library is not found.
     """
-    library = await Library.find_one(Library.id == library_id, Library.user_id == uid)
-
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    library.papers = []
-    library = await library.save()
-
-    return library
+    return await libraries_db.clear(library_id, uid)
 
 
 @router.post("/{library_id}")
@@ -185,29 +160,7 @@ async def add_papers_to_library(
     Raises:
         HTTPException: If the library is not found or the request is invalid.
     """
-    library = await Library.find_one(Library.id == library_id, Library.user_id == uid)
-
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    valid_papers = (
-        await Paper.find(In(Paper.id, list(body.paper_ids)))
-        .project(PaperIdView)
-        .to_list()
-    )
-
-    if len(valid_papers) == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    valid_paper_ids = [paper.id for paper in valid_papers]
-    new_papers = list(set(library.papers + valid_paper_ids))
-
-    if len(new_papers) == len(library.papers):
-        return library
-
-    library.papers = new_papers
-    library = await library.save()
-    return library
+    return await libraries_db.add_papers(library_id, body, uid)
 
 
 @router.patch("/{library_id}/remove-papers")
@@ -229,15 +182,7 @@ async def remove_papers_from_library(
     Raises:
         HTTPException: If the library is not found.
     """
-    library = await Library.find_one(Library.id == library_id, Library.user_id == uid)
-
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    library.papers = list(set(library.papers) - body.paper_ids)
-    library = await library.save()
-
-    return library
+    return await libraries_db.remove_papers(library_id, body, uid)
 
 
 @router.delete("/{library_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -253,12 +198,4 @@ async def delete_library(
     Raises:
         HTTPException: If the library is not found or is the default library.
     """
-    library = await Library.find_one(Library.id == library_id, Library.user_id == uid)
-
-    if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-
-    if library.default:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    await library.delete()
+    await libraries_db.delete(library_id, uid)

@@ -5,8 +5,6 @@ from enum import Enum
 from beanie import Document, Indexed
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 
-from src.papers.adapters.arxiv_adapter import ArxivCategory
-
 
 class UserRefs(BaseModel):
     """User social and academic links."""
@@ -17,6 +15,34 @@ class UserRefs(BaseModel):
     linkedin: HttpUrl | None = None
 
 
+class UserFieldOfStudy(str, Enum):
+    """User field of study."""
+
+    CS = "CS"  # Computer Science
+    MD = "MD"  # Medicine
+    CH = "CH"  # Chemistry
+    BI = "BI"  # Biology
+    MS = "MS"  # Material Science
+    PH = "PH"  # Physics
+    GE = "GE"  # Geology
+    PS = "PS"  # Psychology
+    AR = "AR"  # Art
+    HI = "HI"  # History
+    GG = "GG"  # Geography
+    SO = "SO"  # Sociology
+    BU = "BU"  # Business
+    PO = "PO"  # Political Science
+    EC = "EC"  # Economics
+    PL = "PL"  # Philosophy
+    MA = "MA"  # Mathematics
+    EN = "EN"  # Engineering
+    ES = "ES"  # Environmental Science
+    AF = "AF"  # Agriculture and Food
+    ED = "ED"  # Education
+    LA = "LA"  # Law
+    LI = "LI"  # Linguistics
+
+
 class UserTitle(str, Enum):
     """User titles."""
 
@@ -24,6 +50,7 @@ class UserTitle(str, Enum):
     M_SC = "M_SC"
     DR = "DR"
     PROF = "PROF"
+    PROF_DR = "PROF_DR"
 
 
 class UserBase(BaseModel):
@@ -32,9 +59,7 @@ class UserBase(BaseModel):
     first_name: str
     last_name: str
     refs: UserRefs
-    # TODO: Either define a custom Enum and map to different db categories or
-    #  switch to using Tags
-    research_interests: list[ArxivCategory] = []
+    fields: list[UserFieldOfStudy] = []
     title: UserTitle | None = None
     affiliation: str | None = None
     bday: datetime | None = None
@@ -53,7 +78,7 @@ class UserUpdateInput(UserBase):
     first_name: str = None
     last_name: str = None
     refs: UserRefs = None
-    research_interests: list[ArxivCategory] = None
+    fields: list[UserFieldOfStudy] = None
 
 
 class User(Document, UserBase):
@@ -68,13 +93,7 @@ class User(Document, UserBase):
         return await cls.find_one(cls.email == email)
 
 
-class UserResearchInterestsView(BaseModel):
-    """User research interests view."""
-
-    research_interests: list[ArxivCategory]
-
-
-class UserBasicInfoView(BaseModel):
+class UserLeanView(BaseModel):
     """User basic info view."""
 
     id: str = Field(alias="_id")

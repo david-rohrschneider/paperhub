@@ -5,40 +5,34 @@ from pydantic import BaseModel
 
 
 class MailSettings(BaseModel):
-    """Mail server settings."""
 
-    sendgrid_api_key: str
-    sendgrid_from_email: str
+    sendgrid_api_key: str = ""
+    sendgrid_from_email: str = ""
 
 
 class MongoSettings(BaseModel):
-    """MongoDB settings."""
 
     uri: str = "mongodb://localhost:27017"
     db_name: str = "paperhub"
 
 
 class ThumbnailSettings(BaseModel):
-    """Thumbnail settings."""
 
     width: int = 600
     format: str = "jpg"
     quality: int = 50
     local_folder: str = "thumbnails"
-    max_workers: int = 5
 
 
-class ArxivSettings(BaseModel):
-    """Arxiv settings."""
+class FeedSettings(BaseModel):
 
-    max_results: int = 10
-    source_url_base: str = "https://arxiv.org/abs/"
+    num_positive_samples: int = 50
 
 
 class Settings(BaseSettings):
     """Server config settings."""
 
-    # Server settings
+    # General settings
     root_url: str = "http://localhost:8000"
     dev: bool = False
     version: str = "0.1.0"
@@ -48,13 +42,13 @@ class Settings(BaseSettings):
     mongo: MongoSettings = MongoSettings()
 
     # FastMail SMTP server settings
-    mail: MailSettings
+    mail: MailSettings = MailSettings()
 
     # Thumbnail settings
     thumbnail: ThumbnailSettings = ThumbnailSettings()
 
-    # Arxiv settings
-    arxiv: ArxivSettings = ArxivSettings()
+    # Feed settings
+    feed: FeedSettings = FeedSettings()
 
     model_config = SettingsConfigDict(env_nested_delimiter="__")
 
