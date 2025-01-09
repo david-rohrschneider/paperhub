@@ -144,7 +144,7 @@ async def find_many(
     min_citation_count: int | None = None,
     limit: int = 100,
     offset: int = 0,
-) -> list[Paper]:
+) -> tuple[list[Paper], int]:
     """Find many papers with pagination.
 
     Args:
@@ -160,7 +160,7 @@ async def find_many(
         offset (int, optional): Offset of results. Defaults to 0.
 
     Returns:
-        list[Paper]: List of papers.
+        tuple[list[Paper], int]: List of papers and total count.
     """
     query = __build_query(
         query,
@@ -183,11 +183,11 @@ async def find_many(
         limit=limit,
     )
 
-    pagination._offset = offset - limit
+    pagination._offset = offset - limit + 1
     pagination._next = pagination._offset + limit
     papers: list[Paper] = await pagination._async_get_next_page()
 
-    return [__sanitize_paper(paper) for paper in papers]
+    return [__sanitize_paper(paper) for paper in papers], pagination._total
 
 
 async def get_autocomplete(query: str) -> list[Autocomplete]:

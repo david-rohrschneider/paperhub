@@ -32,7 +32,7 @@ def current_user(
             detail=f"Invalid authentication credentials. {err}",
         )
 
-    if decoded_token["email_verified"] is False:
+    if decoded_token["email_verified"] == False:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email is not verified",

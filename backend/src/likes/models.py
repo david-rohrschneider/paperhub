@@ -3,9 +3,6 @@ from beanie import Document
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
-from src.papers.models import PaperLeanResponse
-from src.users.models import UserLeanView
-
 
 class Like(Document):
     paper_id: str
@@ -20,13 +17,3 @@ class Like(Document):
 
 class LikePaperView(BaseModel):
     paper_id: str
-
-
-class LikesWithUsersResponse(BaseModel):
-    total_likes: int
-    users: list[UserLeanView]
-
-
-class LikesWithPapersResponse(BaseModel):
-    total_likes: int
-    papers: list[PaperLeanResponse]

@@ -29,12 +29,21 @@ class FeedSettings(BaseModel):
     num_positive_samples: int = 50
 
 
+class S3Settings(BaseModel):
+
+    thumbnails_bucket: str = "thumbnails"
+    thumbnail_content_type: str = "image/jpeg"
+    presigned_url_expiry: int = 3600
+
+    # only used locally because of internal presigned URL generation
+    dev_endpoint: str | None = None
+
+
 class Settings(BaseSettings):
     """Server config settings."""
 
     # General settings
-    root_url: str = "http://localhost:8000"
-    dev: bool = False
+    frontend_url: str = "http://localhost:5173"
     version: str = "0.1.0"
     firebase_cert_path: str = "firebase-cert.json"
 
@@ -49,6 +58,10 @@ class Settings(BaseSettings):
 
     # Feed settings
     feed: FeedSettings = FeedSettings()
+
+    # S3 settings
+    s3: S3Settings = S3Settings()
+    aws_endpoint_url: str
 
     model_config = SettingsConfigDict(env_nested_delimiter="__")
 

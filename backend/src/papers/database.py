@@ -23,24 +23,34 @@ async def get_feed(
         .to_list()
     )
 
-    if len(likes) > 0 and pagination.offset == 0:
-        papers = await ss_adapter.get_recommendations(
-            [l.paper_id for l in likes], limit=pagination.limit
-        )
-    else:
+    if len(likes) == 0 or pagination.offset > 0:
         user = await users_db.get_by_id(uid)
 
         if len(likes) > 0 and pagination.offset > 0:
             # Subtract the limit because we started with recommendations
             pagination.offset -= pagination.limit
 
-        papers = await ss_adapter.find_many(
+        papers, _ = await ss_adapter.find_many(
             query="n",
             limit=pagination.limit,
             offset=pagination.offset,
-            fields_of_study=user.fields,
+            fields_of_study=user.fields or None,
             publication_date_start=datetime.now() - timedelta(days=30),
         )
+
+    else:
+        papers = await ss_adapter.get_recommendations(
+            [l.paper_id for l in likes], limit=pagination.limit
+        )
+
+        if len(papers) == 0:
+            user = await users_db.get_by_id(uid)
+            papers, _ = await ss_adapter.find_many(
+                query="n",
+                limit=pagination.limit,
+                fields_of_study=user.fields or None,
+                publication_date_start=datetime.now() - timedelta(days=30),
+            )
 
     like_counts = await likes_db.get_paper_like_counts([p.paperId for p in papers])
 
@@ -53,8 +63,8 @@ async def get_autocomplete(query: str) -> list[Autocomplete]:
 
 async def search_papers(
     body: PaperSearchInput, pagination: Pagination
-) -> tuple[list[SSPaper], dict[str, int]]:
-    papers = await ss_adapter.find_many(
+) -> tuple[list[SSPaper], dict[str, int], int]:
+    papers, total = await ss_adapter.find_many(
         query=body.query,
         publication_types=body.publication_types,
         open_access_pdf=body.open_access_pdf,
@@ -69,4 +79,4 @@ async def search_papers(
 
     like_counts = await likes_db.get_paper_like_counts([p.paperId for p in papers])
 
-    return papers, like_counts
+    return papers, like_counts, total

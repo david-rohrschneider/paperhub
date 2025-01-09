@@ -5,13 +5,15 @@ from fastapi import APIRouter, Depends, status
 from src.auth.dependencies import current_user_id
 from src.dependencies import Pagination
 from src.likes import database as likes_db
-from src.likes.models import LikesWithPapersResponse, LikesWithUsersResponse
+from src.models import PaginatedResponse
+from src.papers.models import PaperResponse
+from src.users.models import UserLeanView
 
 
 router = APIRouter(prefix="/likes", tags=["Like"])
 
 
-@router.post("/{paper_id}", status_code=status.HTTP_201_CREATED)
+@router.post("/paper/{paper_id}", status_code=status.HTTP_201_CREATED)
 async def create_like(
     paper_id: str, uid: Annotated[str, Depends(current_user_id)]
 ) -> None:
@@ -27,7 +29,7 @@ async def create_like(
 @router.get("/paper/{paper_id}")
 async def get_likes_for_paper(
     paper_id: str, pagination: Annotated[Pagination, Depends(Pagination)]
-) -> LikesWithUsersResponse:
+) -> PaginatedResponse[UserLeanView]:
     """Get likes for a paper.
 
     Args:
@@ -35,17 +37,17 @@ async def get_likes_for_paper(
         pagination (Pagination): Pagination parameters.
 
     Returns:
-        LikesWithUsersResponse: Likes response with users.
+        PaginatedResponse[UserLeanView]: Paginated response with users.
     """
-    total_likes, users = await likes_db.get_likes_for_paper(paper_id, pagination)
-    return LikesWithUsersResponse(total_likes=total_likes, users=users)
+    total, users = await likes_db.get_likes_for_paper(paper_id, pagination)
+    return PaginatedResponse[UserLeanView](total=total, data=users)
 
 
 @router.get("")
 async def get_likes_for_user(
     pagination: Annotated[Pagination, Depends(Pagination)],
     uid: Annotated[str, Depends(current_user_id)],
-) -> LikesWithPapersResponse:
+) -> PaginatedResponse[PaperResponse]:
     """Get likes for a user.
 
     Args:
@@ -53,10 +55,10 @@ async def get_likes_for_user(
         uid (str): Firebase user ID.
 
     Returns:
-        LikesWithPapersResponse: Likes response with papers.
+        PaginatedResponse[PaperResponse]: Paginated response with papers.
     """
-    total_likes, papers = await likes_db.get_likes_for_user(uid, pagination)
-    return LikesWithPapersResponse(total_likes=total_likes, papers=papers)
+    total, papers = await likes_db.get_likes_for_user(uid, pagination)
+    return PaginatedResponse[PaperResponse](total=total, data=papers)
 
 
 @router.delete("/{like_id}", status_code=status.HTTP_204_NO_CONTENT)

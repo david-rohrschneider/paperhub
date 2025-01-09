@@ -49,8 +49,9 @@ class UserTitle(str, Enum):
     B_SC = "B_SC"
     M_SC = "M_SC"
     DR = "DR"
+    PHD = "PHD"
+    POSTDOC = "POSTDOC"
     PROF = "PROF"
-    PROF_DR = "PROF_DR"
 
 
 class UserBase(BaseModel):
@@ -69,7 +70,14 @@ class UserBase(BaseModel):
 class UserCreateInput(UserBase):
     """User registration fields."""
 
-    pass
+    email: EmailStr
+    password: str
+
+
+class UserEmailInput(BaseModel):
+    """Input with only email."""
+
+    email: EmailStr
 
 
 class UserUpdateInput(UserBase):
@@ -86,6 +94,9 @@ class User(Document, UserBase):
 
     id: str
     email: Annotated[str, Indexed(EmailStr, unique=True)]
+
+    class Settings:
+        keep_nulls = False
 
     @classmethod
     async def by_email(cls, email: str):

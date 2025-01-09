@@ -59,18 +59,17 @@ app = FastAPI(
     description=DESCRIPTION,
     version=CONFIG.version,
     lifespan=lifespan,
-    dependencies=[Depends(current_user)],
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[CONFIG.frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(UsersRouter)
-app.include_router(PapersRouter)
-app.include_router(LibrariesRouter)
-app.include_router(LikesRouter)
+app.include_router(PapersRouter, dependencies=[Depends(current_user)])
+app.include_router(LibrariesRouter, dependencies=[Depends(current_user)])
+app.include_router(LikesRouter, dependencies=[Depends(current_user)])

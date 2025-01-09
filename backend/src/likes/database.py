@@ -6,8 +6,11 @@ from pymongo.errors import DuplicateKeyError
 from src.dependencies import Pagination
 from src.likes.models import Like
 from src.adapters import semantic_scholar_adapter as ss_adapter
-from src.papers.models import PaperLeanResponse
+from src.models import PaginatedResponse
+from src.papers.models import PaperResponse
+from src.papers.thumbnail import generate_thumbnails
 from src.users.models import User, UserLeanView
+from src.util import get_pagination_aggregation
 
 
 async def create(paper_id: str, uid: str):
@@ -25,17 +28,20 @@ async def create(paper_id: str, uid: str):
 async def get_likes_for_paper(
     paper_id: str, pagination: Pagination
 ) -> tuple[int, list[UserLeanView]]:
-    total_likes = await Like.find(Like.paper_id == paper_id).count()
-
-    if total_likes == 0:
-        return 0, []
-
     likes = (
         await Like.find(Like.paper_id == paper_id)
-        .skip(pagination.offset)
-        .limit(pagination.limit)
+        .aggregate(
+            get_pagination_aggregation(pagination),
+            projection_model=PaginatedResponse[Like],
+        )
         .to_list()
     )
+
+    likes, total_likes = likes[0].data, likes[0].total
+
+    if total_likes == 0:
+        return total_likes, []
+
     users = (
         await User.find(In(User.id, [l.user_id for l in likes]))
         .project(UserLeanView)
@@ -47,20 +53,38 @@ async def get_likes_for_paper(
 
 async def get_likes_for_user(
     uid: str, pagination: Pagination
-) -> tuple[int, list[PaperLeanResponse]]:
-    total_likes = await Like.find(Like.user_id == uid).count()
-
-    if total_likes == 0:
-        return 0, []
-
+) -> tuple[int, list[PaperResponse]]:
     likes = (
         await Like.find(Like.user_id == uid)
-        .skip(pagination.offset)
-        .limit(pagination.limit)
+        .aggregate(
+            get_pagination_aggregation(pagination),
+            projection_model=PaginatedResponse[Like],
+        )
         .to_list()
     )
+
+    likes, total_likes = likes[0].data, likes[0].total
+
+    if total_likes == 0:
+        return total_likes, []
+
     papers = await ss_adapter.find_many_by_ids([l.paper_id for l in likes])
-    papers = [PaperLeanResponse.from_semantic_scholar(p) for p in papers]
+
+    thumbnail_urls = [
+        (p.openAccessPdf["url"], p.paperId) for p in papers if p.openAccessPdf
+    ]
+    presigned_urls = await generate_thumbnails(thumbnail_urls)
+
+    like_counts = await get_paper_like_counts([p.paperId for p in papers])
+
+    papers = [
+        PaperResponse.from_semantic_scholar(
+            p,
+            like_counts[p.paperId],
+            presigned_urls[p.paperId] if p.paperId in presigned_urls else None,
+        )
+        for p in papers
+    ]
 
     return total_likes, papers
 

@@ -1,10 +1,14 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from firebase_admin import auth
 
-from src.auth.dependencies import current_user_id, current_user
-from src.users.models import User, UserCreateInput, UserUpdateInput
+from src.auth.dependencies import current_user_id
+from src.users.models import (
+    User,
+    UserCreateInput,
+    UserEmailInput,
+    UserUpdateInput,
+)
 from src.users import database as users_db
 
 
@@ -12,14 +16,11 @@ router = APIRouter(prefix="/users", tags=["User"])
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_user(
-    body: UserCreateInput, user: Annotated[auth.UserRecord, Depends(current_user)]
-) -> User:
+async def create_user(body: UserCreateInput) -> User:
     """Create a new user. This supposes that the user is already authenticated by Firebase.
 
     Args:
         body (UserCreateInput): User registration fields.
-        user (auth.UserRecord): Firebase user record.
 
     Returns:
         User: The created user.
@@ -27,7 +28,33 @@ async def create_user(
     Raises:
         HTTPException: If the user already exists.
     """
-    return await users_db.create(body, user)
+    return await users_db.create(body)
+
+
+@router.post("/request-verification-email", status_code=status.HTTP_201_CREATED)
+def request_verification_email(body: UserEmailInput) -> None:
+    """Request a new verification email given an email.
+
+    Args:
+        body (UserEmailInput): Request body with the email.
+
+    Raises:
+        HTTPException: If the user is already verified or the link generation fails.
+    """
+    users_db.request_verification_email(body.email)
+
+
+@router.post("/request-password-reset-email", status_code=status.HTTP_201_CREATED)
+def request_password_reset_email(body: UserEmailInput) -> None:
+    """Request a new password reset email given an email.
+
+    Args:
+        body (UserEmailInput): Request body with the email.
+
+    Raises:
+        HTTPException: If the user is not found or the link generation fails.
+    """
+    users_db.request_password_reset_email(body.email)
 
 
 @router.get("")

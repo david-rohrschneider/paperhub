@@ -64,23 +64,21 @@ class PaperResponse(BaseModel):
     id: str
     external_ids: ExternalIds
     title: str
-    published_at: datetime
     authors: list[str]
     citations: int
     publication_types: list[PublicationType] = []
+    published_at: datetime | None = None
     abstract: str | None = None
     likes: int = 0
     open_pdf_url: HttpUrl | None = None
     venue: Venue | None = None
-    thumbnail_url: HttpUrl
+    thumbnail_url: HttpUrl | None = None
+    bibtex: str | None = None
 
     @classmethod
-    def from_semantic_scholar(cls, p: SSPaper, likes: int) -> "PaperResponse":
-        thumbnail_url = CONFIG.root_url + f"/papers/{p.paperId}/thumbnail"
-
-        if not p.openAccessPdf:
-            thumbnail_url += "?locked=true"
-
+    def from_semantic_scholar(
+        cls, p: SSPaper, likes: int, thumbnail_url: str | None
+    ) -> "PaperResponse":
         publication_types = []
         if p.publicationTypes:
             publication_types = [PublicationType(pt) for pt in p.publicationTypes]
@@ -102,29 +100,7 @@ class PaperResponse(BaseModel):
                 else None
             ),
             thumbnail_url=thumbnail_url,
-        )
-
-
-class PaperLeanResponse(BaseModel):
-    id: str
-    title: str
-    published_at: datetime
-    authors: list[str]
-    thumbnail_url: HttpUrl
-
-    @classmethod
-    def from_semantic_scholar(cls, p: SSPaper) -> "PaperLeanResponse":
-        thumbnail_url = CONFIG.root_url + f"/papers/{p.paperId}/thumbnail"
-
-        if not p.openAccessPdf:
-            thumbnail_url += "?locked=true"
-
-        return cls(
-            id=p.paperId,
-            title=p.title,
-            published_at=p.publicationDate,
-            authors=[a.name for a in p.authors],
-            thumbnail_url=thumbnail_url,
+            bibtex=p.citationStyles["bibtex"] if p.citationStyles else None,
         )
 
 
