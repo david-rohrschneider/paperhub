@@ -4,8 +4,8 @@ services:
     image: mongo
     restart: unless-stopped
     container_name: paperhub-db
-    ports:
-      - '27017:27017'
+    # ports:
+    #   - '27017:27017'
     volumes:
       - "mongodb-data:/data/db"
     networks:
@@ -18,13 +18,55 @@ services:
       dockerfile: ./Dockerfile
     container_name: paperhub-backend
     restart: unless-stopped
-    command: ["fastapi", "run", "src/app.py", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - paperhub-db
+      - paperhub-minio
     env_file:
-      - ./backend/.env.development
+      - ./backend/.env.docker
     ports:
       - "8000:8000"
     volumes:
       - "${SYSTEM_FIREBASE_CERT_PATH}:/fastapi/firebase-cert.json:ro"
+    networks:
+      - paperhub
+  
+  paperhub-frontend:
+    image: paperhub-frontend
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+    container_name: paperhub-frontend
+    restart: unless-stopped
+    depends_on:
+      - paperhub-backend
+    ports:
+      - "5173:5173"
+    networks:
+      - paperhub
+
+  paperhub-minio:
+    image: minio/minio
+    restart: unless-stopped
+    container_name: paperhub-minio
+    command: minio server /data --console-address ":9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio-data:/data
+    networks:
+      - paperhub
+
+  create-buckets:
+    image: minio/mc
+    depends_on:
+      - paperhub-minio
+    entrypoint: >
+      /bin/sh -c "mc config host add minio http://paperhub-minio:9000 minioadmin minioadmin && mc mb -p minio/thumbnails && mc anonymous set public minio/thumbnails && exit 0"
+    restart: on-failure
     networks:
       - paperhub
 
@@ -34,3 +76,4 @@ networks:
 
 volumes:
   mongodb-data:
+  minio-data:
