@@ -1,39 +1,38 @@
-# frontend
+# Frontend 🎨
 
-This template should help get you started developing with Vue 3 in Vite.
+This directory contains the Vue 3 application that talks to the Paperhub API. Vite handles the build process while Bun manages dependencies.
 
-## Recommended IDE Setup
+## Tech stack
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Vue 3** 🖖
+- **Vite** ⚡
+- **PrimeVue** UI components 🌟
+- **Pinia** for state management 🍍
+- **Bun** as runtime and package manager 🍞
 
-## Type Support for `.vue` Imports in TS
+## Installation
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+1. `cd frontend`
+2. Install dependencies:
+   ```bash
+   bun install
+   ```
+3. Copy `.env.example` to `.env` and set the API URL and Firebase credentials.
 
-## Customize configuration
+## Development
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-bun install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+Run the dev server:
+```bash
 bun dev
 ```
 
-### Type-Check, Compile and Minify for Production
+## Production build
 
-```sh
+```bash
 bun run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
+Lint the project with:
+```bash
 bun lint
 ```
