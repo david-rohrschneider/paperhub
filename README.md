@@ -1,31 +1,21 @@
-# paperhub
+# Paperhub 📚
 
-## Backend
+Paperhub lets you explore research papers and curate your own reading list. Metadata is fetched from Semantic Scholar, users authenticate via Firebase, and files are stored in MongoDB. Everything is wired together through **Docker Compose** for easy local development.
 
-- FastAPI (Server)
-- MongoDB (Database)
-- Beanie (ORM)
-- Firebase (User Auth)
-- Black (Formatter)
+## Tech stack 🚀
 
-### Installation
-1. `cd backend`
-2. `python -m venv venv`
-3. `source venv/bin/activate`
-4. `pip install -r requirements.txt`
-5. `cp .env.development.example .env.development`
-6. Fill in necessary environment variables
+- **Docker Compose** 🐳 – orchestrates the stack
+- **Backend** ⚙️ – FastAPI, MongoDB with Beanie ODM, Semantic Scholar client and Firebase authentication
+- **Frontend** 🎨 – Vue 3 with Vite and PrimeVue, powered by Bun
 
-### Run
-1. Initialize local mongodb via docker:
-   - `cd ..`
-   - `docker compose up paperhub-db --build -d`
-2. Run the server
-```bash
-uvicorn src.main:app --host localhost --port 8000 --env-file .env.development
-```
+## Quick start with Docker
 
-### Before you commit
-```bash
-cd backend && source venv/bin/activate && black src
-```
+1. Copy `.env.example` to `.env` and set `SYSTEM_FIREBASE_CERT_PATH` to your Firebase service account JSON file.
+2. Follow [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md) to create the `.env.docker` and `.env` files for each service.
+3. Bring up all services:
+   ```bash
+   docker compose up --build
+   ```
+   This starts the database, backend API and frontend app.
+
+For manual installation and additional commands see [`backend/README.md`](backend/README.md) and [`frontend/README.md`](frontend/README.md).
